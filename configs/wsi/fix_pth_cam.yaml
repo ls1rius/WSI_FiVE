@@ -1,0 +1,34 @@
+DATA:
+    ROOT: './data/CAMELYON16/patch'
+    TRAIN_FILE: './data/CAMELYON16/CAM16_data_train.csv'
+    VAL_FILE: './data/CAMELYON16/CAM16_data_test.csv'
+    LABEL_LIST_TRAIN: './data/CAMELYON16/CAM16_labels_train.csv'
+    LABEL_LIST_VAL: './data/CAMELYON16/CAM16_labels_test.csv'
+    NUM_FRAMES_PERCENT: 0.50
+    NUM_FRAMES: 22528
+MODEL:
+    CONTEXT_LENGTH: 308 # max 103 # max 169
+TRAIN:
+    BATCH_SIZE: 1
+    ACCUMULATION_STEPS: 8
+    EPOCHS: 100
+    LR: 3.e-6
+AUG:
+    MIXUP: 0.0
+PRINT_FREQ: 50
+#TEST:
+#    ONLY_TEST: True
+
+IS_IMG_PTH: True
+TOKEN_NUM:
+    STA: 101 # start
+    END: 102
+    SEP: 132
+    UNK: 3655 # place holder Unknown
+PROMPT_LIST: ['What is the differentiation of the lesion? (maybe: Well-differentiated; Moderately differentiated; Poorly differentiated; Moderately to poorly differentiated; Mixed differentiation. or others.)',
+               'Is there any indication of spread through air spaces around the lesion?',
+               'Is there any indication of vascular invasion by the lesion?',
+               'Is there any indication of pleural invasion by the lesion?',
+               'Is there any evidence of the lesion invading adjacent tissues or organs (excluding the current lung organ)?',
+               'Are the margins of the excised tissue clear of disease? (note that: R0 means negative; R1 R2 are both mean positive; Rx means Unknown.']
+

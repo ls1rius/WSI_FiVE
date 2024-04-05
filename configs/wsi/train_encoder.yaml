@@ -1,0 +1,42 @@
+DATA:
+    ROOT: './data/TCGA-lung-patch_report'
+    TRAIN_FILE: './data/TCGA-lung-patch_report/LUAD_data_train_reid.csv'
+    VAL_FILE: './data/TCGA-lung-patch_report/LUAD_data_test_reid.csv'
+    LABEL_LIST_TRAIN: './data/TCGA-lung-patch_report/LUAD_labels_train_reid.csv'
+    LABEL_LIST_VAL: './data/TCGA-lung-patch_report/LUAD_labels_test_reid.csv'
+    NUM_FRAMES_PERCENT: 0.25
+    NUM_FRAMES: 16384
+MODEL:
+    ARCH: ViT-B/16
+    CONTEXT_LENGTH: 308 # max 103 # max 169
+    FIX_TEXT: False
+    FIX_IMAGE: False
+#    PRETRAINED: './data/k400_16_16.pth'
+    GRAD_BATCH: -1
+    VIT_VISION_LAYERS: -1 # 12
+    VIT_TEXT_LAYERS: -1 # 12
+TRAIN:
+    BATCH_SIZE: 1
+    ACCUMULATION_STEPS: 8
+    EPOCHS: 100
+#    OPT_LEVEL: 'O0'
+    LR: 3.e-6
+AUG:
+    MIXUP: 0.0
+PRINT_FREQ: 50
+
+#TEST:
+#    ONLY_TEST: True
+IS_IMG_PTH: True
+TOKEN_NUM:
+    STA: 101 # start
+    END: 102
+    SEP: 132
+    UNK: 3655 # place holder Unknown
+PROMPT_LIST: ['What is the differentiation of the lesion? (maybe: Well-differentiated; Moderately differentiated; Poorly differentiated; Moderately to poorly differentiated; Mixed differentiation. or others.)',
+               'Is there any indication of spread through air spaces around the lesion?',
+               'Is there any indication of vascular invasion by the lesion?',
+               'Is there any indication of pleural invasion by the lesion?',
+               'Is there any evidence of the lesion invading adjacent tissues or organs (excluding the current lung organ)?',
+               'Are the margins of the excised tissue clear of disease? (note that: R0 means negative; R1 R2 are both mean positive; Rx means Unknown.']
+
