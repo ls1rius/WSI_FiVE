@@ -62,7 +62,7 @@ main.py \
 --output workdirs/tmp \
 --only_test \
 --pretrained \
-workdirs/tmp_cp/ckpt_epoch_4.pth
+workdirs/tmp_cp/ckpt_epoch_27.pth
 ```
 
 ## Log
@@ -70,6 +70,8 @@ workdirs/tmp_cp/ckpt_epoch_4.pth
 
 ## TODO
 - end-to-end training version
+- optimize code
+- add some annotation
 
 ## Bibtex
 If this project is useful for you, please consider citing our paper.
