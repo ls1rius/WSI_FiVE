@@ -70,6 +70,7 @@ def main(config):
                             T_mit=config.MODEL.GRAD_BATCH, # L10 change config.DATA.NUM_FRAMES -> config.MODEL.GRAD_BATCH
                             vit_vision_layers=config.MODEL.VIT_VISION_LAYERS, # L10 add
                             vit_text_layers=config.MODEL.VIT_TEXT_LAYERS,  # L10 add
+                            is_img_pth=config.IS_IMG_PTH, # L10 add
                           )
     model = model.cuda()
     mixup_fn = None

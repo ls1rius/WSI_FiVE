@@ -38,8 +38,9 @@ git clone https://github.com/NVIDIA/apex
 cd apex
 pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./
 ```
-
-## Train
+## Model
+The default training model is trained with fixed pth. To train the model end-to-end, change the parameter `IS_IMG_PTH` to `False` in the `configs`.
+### Train
 The config files lie in `configs`.
 ```
 CUDA_VISIBLE_DEVICES=0,1 \
@@ -51,7 +52,7 @@ main.py \
 --output workdirs/tmp_cp
 ```
 
-## Test
+### Test
 ```
 CUDA_VISIBLE_DEVICES=1 \
 python -m torch.distributed.launch \
@@ -67,9 +68,9 @@ workdirs/tmp_cp/ckpt_epoch_27.pth
 
 ## Log
 - 20240405 fix pth version upload fv_2.0.0
+- 20240406 add end to end training model fv_2.0.1
 
 ## TODO
-- end-to-end training version
 - optimize code
 - add some annotation
 

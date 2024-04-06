@@ -1774,6 +1774,7 @@ class SampleWSIData:
                  test_mode=False,
                  multiview=1,
                  num_clips_percent=0.25,
+                 is_img_pth=True,
                  **kwargs):
         self.num_clips = num_clips
         self.test_mode = test_mode
@@ -1783,6 +1784,7 @@ class SampleWSIData:
         self.frame_interval = frame_interval
         self.num_clips_percent = num_clips_percent
         self.twice_sample = False
+        self.is_img_pth = is_img_pth
 
     def _get_train_clips(self, num_frames):
         ori_clip_len = self.clip_len * self.frame_interval
@@ -1867,35 +1869,43 @@ class SampleWSIData:
         #########
         imgs = []
         posis = []
+        imgs_embed = []
         ### if IS_IMG_PTH is False, use this part
-        # for idx in np.unique(frame_inds):
-        #     posx, posy = patch_mask_nonzero_inds[idx]
-        #     posis.append(np.array([posx, posy]))
-            # imgfilename = osp.join(data_prefix, filename, '{}_{}.jpeg'.format(posx.item(), posy.item()))
-            # img = cv2.imread(imgfilename)
-            # imgs.append(img)
-        ###
-        ### if IS_IMG_PTH is True, use this part
-        imgs.append(np.zeros((256, 256, 3), dtype=np.uint8)) # used for place holder
-        #---
-        img_pth = osp.join(data_prefix, filename).replace('LUAD-patch', 'LUAD-patch-embed-pub').replace(
-            'LUSC-patch', 'LUSC-patch-embed-pub').replace('/patch/', '/patch-embed-pub/') + '.pth'
-        imgs_embed_all = torch.load(img_pth)
-        # img_pth = osp.join(data_prefix, filename) + '.csv'
-        # imgs_embed_all = torch.Tensor(pd.read_csv(img_pth).values)
-        # ---
+        if not self.is_img_pth:
+            imgs_embed.append(np.zeros((256, 256, 3), dtype=np.uint8))  # used for place holder
+            for idx in np.unique(frame_inds):
+                # posx, posy = patch_mask_nonzero_inds[idx]
+                # posis.append(np.array([posx, posy]))
+                # imgfilename = osp.join(data_prefix, filename, '{}_{}.jpeg'.format(posx.item(), posy.item()))
+                imgfilename = osp.join(data_prefix, filename, '_{}.jpeg'.format(idx))
+                img = cv2.imread(imgfilename)
+                imgs.append(img)
 
-        assert len(imgs_embed_all) == total_frames
-        imgs_embed = imgs_embed_all[frame_inds].numpy().tolist()
-        tmp_embed = np.zeros((imgs_embed_all.shape[1]), dtype=np.uint8).tolist()
+            patch_inds = list(frame_inds)
+            sample_range = len(imgs)
+            for _ in range(max(0, self.num_clips - sample_range)):
+                # posis.append(np.array([patch_maxr, patch_maxc]))
+                patch_inds.append(len(frame_inds))
+                imgs.append(np.zeros((256, 256, 3), dtype=np.uint8))
 
-        patch_inds = list(frame_inds)
-        sample_range = len(imgs_embed)
-        for _ in range(max(0, self.num_clips - len(imgs_embed))):
-            # posis.append(np.array([patch_maxr, patch_maxc]))
-            patch_inds.append(len(frame_inds))
-            imgs_embed.append(tmp_embed)
         ###
+        else: ### if IS_IMG_PTH is True, use this part
+            imgs.append(np.zeros((256, 256, 3), dtype=np.uint8))  # used for place holder
+            img_pth = osp.join(data_prefix, filename).replace('LUAD-patch', 'LUAD-patch-embed-pub').replace(
+                'LUSC-patch', 'LUSC-patch-embed-pub').replace('/patch/', '/patch-embed-pub/') + '.pth'
+            imgs_embed_raw = torch.load(img_pth)
+            # img_pth = osp.join(data_prefix, filename) + '.csv'
+            # imgs_embed_raw = torch.Tensor(pd.read_csv(img_pth).values)
+            ###
+            assert len(imgs_embed_raw) == total_frames
+            imgs_embed = imgs_embed_raw[frame_inds].numpy().tolist()
+            tmp_embed = np.zeros((imgs_embed_raw.shape[1]), dtype=np.uint8).tolist()
+
+            patch_inds = list(frame_inds)
+            sample_range = len(imgs_embed)
+            for _ in range(max(0, self.num_clips - sample_range)):
+                patch_inds.append(len(frame_inds))
+                imgs_embed.append(tmp_embed)
 
         results['imgs'] = np.array(imgs)
         results['posis'] = np.array(posis)

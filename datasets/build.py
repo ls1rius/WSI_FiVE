@@ -264,7 +264,7 @@ def build_dataloader(logger, config):
 
     train_pipeline = [
         dict(type='SampleWSIData', clip_len=1, frame_interval=1, num_clips=config.DATA.NUM_FRAMES,
-             num_clips_percent=config.DATA.NUM_FRAMES_PERCENT),
+             num_clips_percent=config.DATA.NUM_FRAMES_PERCENT, is_img_pth=config.IS_IMG_PTH),
         # dict(type='DecordInit'),
         # dict(type='SampleFrames', clip_len=1, frame_interval=1, num_clips=config.DATA.NUM_FRAMES),
         # dict(type='DecordDecode'),
@@ -305,7 +305,7 @@ def build_dataloader(logger, config):
     
     val_pipeline = [
         dict(type='SampleWSIData', clip_len=1, frame_interval=1, num_clips=config.DATA.NUM_FRAMES, test_mode=True,
-             num_clips_percent=config.DATA.NUM_FRAMES_PERCENT),
+             num_clips_percent=config.DATA.NUM_FRAMES_PERCENT, is_img_pth=config.IS_IMG_PTH),
         # dict(type='DecordInit'),
         # dict(type='SampleFrames', clip_len=1, frame_interval=1, num_clips=config.DATA.NUM_FRAMES, test_mode=True),
         # dict(type='DecordDecode'),

@@ -62,6 +62,7 @@ class XCLIP(CLIP):
                  use_cache=True,
                  use_checkpoint=False,
                  T_mit=8,
+                 is_img_pth=True,
                  ):
         super().__init__(
             embed_dim,
@@ -69,31 +70,22 @@ class XCLIP(CLIP):
             context_length, vocab_size, transformer_width, transformer_heads, transformer_layers
         )
         self.use_cache = use_cache
-        # self.mit = MultiframeIntegrationTransformer(T=T, embed_dim=embed_dim, layers=mit_layers,) # L10 change T->T_mit
         self.mit = PatchFusionTransformer(T, embed_dim=embed_dim, layers_sa=1, layers_ca=1,)
+        self.is_img_pth = is_img_pth
 
-        # dpr = [x.item() for x in torch.linspace(0, droppath, vision_layers)] if droppath > 0. else None
-        #
-        # vision_heads = vision_width // 64
-        # self.visual = CrossFrameCommunicationTransformer(
-        #     input_resolution=image_resolution,
-        #     patch_size=vision_patch_size,
-        #     width=vision_width,
-        #     layers=vision_layers,
-        #     heads=vision_heads,
-        #     output_dim=embed_dim,
-        #     droppath=dpr,
-        #     T=T,
-        #     use_checkpoint=use_checkpoint,
-        # )
-        # self.visual = VisionTransformer(
-        #     input_resolution=image_resolution,
-        #     patch_size=vision_patch_size,
-        #     width=vision_width,
-        #     layers=vision_layers,
-        #     heads=vision_heads,
-        #     output_dim=embed_dim,
-        # )
+        if not is_img_pth:
+            vision_heads = vision_width // 64
+            self.visual = VisionTransformer(
+                input_resolution=image_resolution,
+                patch_size=vision_patch_size,
+                width=vision_width,
+                layers=vision_layers,
+                heads=vision_heads,
+                output_dim=embed_dim,
+            )
+        else:
+            # self.visual = MedCLIPVisionModelViT()
+            self.visual = nn.Identity()
         # self.transformer = Transformer(
         #     width=transformer_width,
         #     layers=transformer_layers,
@@ -105,12 +97,8 @@ class XCLIP(CLIP):
         # self.positional_embedding = nn.Parameter(torch.empty(self.context_length, transformer_width))
         # self.ln_final = LayerNorm(transformer_width)
         # self.text_projection = nn.Parameter(torch.empty(transformer_width, embed_dim))
-        # self.llama = llama_text("./llama_hf/", None)
 
-        # self.visual = MedCLIPVisionModelViT()
-        self.visual = nn.Identity()
         self.transformer = MedCLIPTextModel()
-
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
         self.cache_text_features = None
@@ -131,13 +119,6 @@ class XCLIP(CLIP):
 
     def encode_image(self, image, bs=None):
         return self.visual(image), None
-
-    # def encode_image(self, image, bs=None):
-    #     return self.visual(image, bs)
-
-    # def encode_text(self, text, labels_id=None):
-    #     x = self.llama(text, labels_id)
-    #     return x
 
     # L10 add for prompt addition
     def encode_prompt_addition(self, prompt):
@@ -368,8 +349,10 @@ class XCLIP(CLIP):
         prompt_addition = prompt_addition / prompt_addition.norm(dim=-1, keepdim=True)
 
         b = image.shape[0]
-        video_features = self.mit(imgs_embed, prompt_addition, patch_info)
-        # video_features, img_features = self.encode_video(image, prompt_features_add, patch_info)
+        if self.is_img_pth:
+            video_features = self.mit(imgs_embed, prompt_addition, patch_info)
+        else:
+            video_features, _ = self.encode_video(image, prompt_addition, patch_info)
             
         if patch_info['training']==True:
             label_id = patch_info['label_id']
@@ -398,58 +381,60 @@ class XCLIP(CLIP):
 def build_model(state_dict: dict, T=8, droppath=0., use_checkpoint=False, logger=None, prompts_alpha=1e-1,
                 prompts_layers=2, use_cache=True, mit_layers=1,
                 context_length=77, T_mit=8, vit_vision_layers=-1, vit_text_layers=-1,
+                is_img_pth=True,
                 ):
-    # ### L10 add for lora
-    # state_dict = OrderedDict(
-    #     [(k.replace("visual.model", "visual").replace("transformer.model", "transformer"), v) for k, v in
-    #      state_dict.items()])
-    # ###
-    # vit = "visual.proj" in state_dict
-    # if vit:
-    #     vision_width = state_dict["visual.conv1.weight"].shape[0]
-    #     vision_layers = len([k for k in state_dict.keys() if k.startswith("visual.") and k.endswith(".attn.in_proj_weight")])
-    #     vision_patch_size = state_dict["visual.conv1.weight"].shape[-1]
-    #     grid_size = round((state_dict["visual.positional_embedding"].shape[0] - 1) ** 0.5)
-    #     image_resolution = vision_patch_size * grid_size
-    # else:
-    #     counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in [1, 2, 3, 4]]
-    #     vision_layers = tuple(counts)
-    #     vision_width = state_dict["visual.layer1.0.conv1.weight"].shape[0]
-    #     output_width = round((state_dict["visual.attnpool.positional_embedding"].shape[0] - 1) ** 0.5)
-    #     vision_patch_size = None
-    #     assert output_width ** 2 + 1 == state_dict["visual.attnpool.positional_embedding"].shape[0]
-    #     image_resolution = output_width * 32
-    #
-    # embed_dim = state_dict["text_projection"].shape[1]
-    # # L10 change context_length -> 4096
-    # if context_length != state_dict["positional_embedding"].shape[0]:
-    #     pos_encodings = positional_encoding(context_length, state_dict["positional_embedding"].shape[1])
-    #     pos_encodings = torch.Tensor(pos_encodings)
-    #     state_dict["positional_embedding"] = pos_encodings
-    #     # state_dict["positional_embedding"] = torch.randn(context_length, state_dict["positional_embedding"].shape[1])
-    # else:
-    #     context_length = state_dict["positional_embedding"].shape[0]
-    # ###
-    # # context_length = state_dict["positional_embedding"].shape[0]
-    # vocab_size = state_dict["token_embedding.weight"].shape[0]
-    # transformer_width = state_dict["ln_final.weight"].shape[0]
-    # transformer_heads = transformer_width // 64
-    # transformer_layers = len(set(k.split(".")[2] for k in state_dict if k.startswith(f"transformer.resblocks")))
-    #
-    # if vit_vision_layers > 0:
-    #     vision_layers = vit_vision_layers
-    # if vit_text_layers > 0:
-    #     transformer_layers = vit_text_layers
+    if not is_img_pth:
+        ### L10 add for lora
+        state_dict = OrderedDict(
+            [(k.replace("visual.model", "visual").replace("transformer.model", "transformer"), v) for k, v in
+             state_dict.items()])
+        ###
+        vit = "visual.proj" in state_dict
+        if vit:
+            vision_width = state_dict["visual.conv1.weight"].shape[0]
+            vision_layers = len([k for k in state_dict.keys() if k.startswith("visual.") and k.endswith(".attn.in_proj_weight")])
+            vision_patch_size = state_dict["visual.conv1.weight"].shape[-1]
+            grid_size = round((state_dict["visual.positional_embedding"].shape[0] - 1) ** 0.5)
+            image_resolution = vision_patch_size * grid_size
+        else:
+            counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in [1, 2, 3, 4]]
+            vision_layers = tuple(counts)
+            vision_width = state_dict["visual.layer1.0.conv1.weight"].shape[0]
+            output_width = round((state_dict["visual.attnpool.positional_embedding"].shape[0] - 1) ** 0.5)
+            vision_patch_size = None
+            assert output_width ** 2 + 1 == state_dict["visual.attnpool.positional_embedding"].shape[0]
+            image_resolution = output_width * 32
 
-    embed_dim = 512
-    image_resolution = -1
-    vision_layers = -1
-    vision_width = -1
-    vision_patch_size = -1
-    vocab_size = -1
-    transformer_width = -1
-    transformer_heads = -1
-    transformer_layers = -1
+        embed_dim = state_dict["text_projection"].shape[1]
+        # L10 change context_length -> 4096
+        if context_length != state_dict["positional_embedding"].shape[0]:
+            pos_encodings = positional_encoding(context_length, state_dict["positional_embedding"].shape[1])
+            pos_encodings = torch.Tensor(pos_encodings)
+            state_dict["positional_embedding"] = pos_encodings
+            # state_dict["positional_embedding"] = torch.randn(context_length, state_dict["positional_embedding"].shape[1])
+        else:
+            context_length = state_dict["positional_embedding"].shape[0]
+        ###
+        # context_length = state_dict["positional_embedding"].shape[0]
+        vocab_size = state_dict["token_embedding.weight"].shape[0]
+        transformer_width = state_dict["ln_final.weight"].shape[0]
+        transformer_heads = transformer_width // 64
+        transformer_layers = len(set(k.split(".")[2] for k in state_dict if k.startswith(f"transformer.resblocks")))
+
+        if vit_vision_layers > 0:
+            vision_layers = vit_vision_layers
+        if vit_text_layers > 0:
+            transformer_layers = vit_text_layers
+    else:
+        embed_dim = 512
+        image_resolution = -1
+        vision_layers = -1
+        vision_width = -1
+        vision_patch_size = -1
+        vocab_size = -1
+        transformer_width = -1
+        transformer_heads = -1
+        transformer_layers = -1
     model = XCLIP(
         embed_dim,
         image_resolution, vision_layers, vision_width, vision_patch_size,
@@ -457,6 +442,7 @@ def build_model(state_dict: dict, T=8, droppath=0., use_checkpoint=False, logger
         T=T, droppath=droppath, mit_layers=mit_layers,
         prompts_alpha=prompts_alpha, prompts_layers=prompts_layers,
         use_checkpoint=use_checkpoint, use_cache=use_cache, T_mit=T_mit,
+        is_img_pth=is_img_pth
     )
 
     # for key in ["input_resolution", "context_length", "vocab_size"]: # "mit.positional_embedding"
@@ -476,6 +462,7 @@ def load(model_path, name: str, device: Union[str, torch.device] = "cuda" if tor
          jit=True, T=8, droppath=0., use_checkpoint=False, logger=None, use_cache=True, prompts_alpha=1e-1,
          prompts_layers=2, mit_layers=1,
          context_length=77, T_mit=8, vit_vision_layers=-1, vit_text_layers=-1,
+         is_img_pth = True,
 ):
     if model_path is None:
         model_path = clip._download(clip._MODELS[name])
@@ -502,6 +489,7 @@ def load(model_path, name: str, device: Union[str, torch.device] = "cuda" if tor
                         T_mit=T_mit,
                         vit_vision_layers=vit_vision_layers,
                         vit_text_layers=vit_text_layers,
+                        is_img_pth=is_img_pth,
                         )
     if str(device) == "cpu":
         model.float()
