@@ -40,6 +40,11 @@ pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp
 ```
 ## Model
 The default training model is trained with fixed pth. To train the model end-to-end, change the parameter `IS_IMG_PTH` to `False` in the `configs`.
+#### For End-to-end Training:
+- End-to-end training will train the backbone of the model at the same time, and its performance limit will be higher, but it will also require greater GPU usage. It is recommended that the parameter NUM_FRAMES can be reduced appropriately, around 2048.
+- At the same time, due to the differences in the original WSI clipping method and data storage method, the data reading method may need to be adjusted appropriately. You can modify line 1874 in the file "datasets/pipeline.py" to suit your local training data.
+
+
 ### Train
 The config files lie in `configs`.
 ```
@@ -63,12 +68,14 @@ main.py \
 --output workdirs/tmp \
 --only_test \
 --pretrained \
-workdirs/tmp_cp/ckpt_epoch_27.pth
+workdirs/five_fix_pth_95.4.pth
 ```
+PTH can be found [here](https://drive.google.com/file/d/1Z1MO-IYuosW2kAw04GHMUguAc345jnf0/view?usp=sharing)
 
 ## Log
 - 20240405 fix pth version upload fv_2.0.0
 - 20240406 add end to end training model fv_2.0.1
+- 20240427 add pth
 
 ## TODO
 - optimize code
