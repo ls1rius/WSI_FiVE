@@ -4,7 +4,7 @@ DATA:
     VAL_FILE: './data/TCGA-lung-patch_report/LUAD_LUSC_data_val_reid.csv'
     LABEL_LIST_TRAIN: './data/TCGA-lung-patch_report/LUAD_LUSC_labels_desc_reid.csv'
     LABEL_LIST_VAL: './data/TCGA-lung-patch_report/LUAD_LUSC_labels_val_reid.csv'
-    NUM_FRAMES_PERCENT: 1.00
+    NUM_FRAMES_PERCENT: 0.50
     NUM_FRAMES: 16384
 MODEL:
     CONTEXT_LENGTH: 308 # max 103 # max 169

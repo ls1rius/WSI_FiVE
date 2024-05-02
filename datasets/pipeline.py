@@ -1835,12 +1835,13 @@ class SampleWSIData:
         return clip_offsets
 
     def __call__(self, results):
-        # patch_maxr = results['patch_maxr']
-        # patch_maxc = results['patch_maxc']
-        # patch_mask = torch.Tensor(np.array(results['patch_mask'].split(',')).astype(int)).reshape(patch_maxr, patch_maxc)
-        # patch_mask_nonzero_inds = torch.nonzero(patch_mask)
-        # total_frames = len(patch_mask_nonzero_inds)
         total_frames = results['patch_pub_cnt']
+        if not self.is_img_pth:
+            patch_maxr = results['patch_maxr']
+            patch_maxc = results['patch_maxc']
+            patch_mask = torch.Tensor(np.array(results['patch_mask'].split(',')).astype(int)).reshape(patch_maxr, patch_maxc)
+            patch_mask_nonzero_inds = torch.nonzero(patch_mask)
+            total_frames = len(patch_mask_nonzero_inds)
         ### random sample for train
         ### fix sample for test
         clip_offsets = self._sample_clips(total_frames)
@@ -1874,10 +1875,10 @@ class SampleWSIData:
         if not self.is_img_pth:
             imgs_embed.append(np.zeros((256, 256, 3), dtype=np.uint8))  # used for place holder
             for idx in np.unique(frame_inds):
-                # posx, posy = patch_mask_nonzero_inds[idx]
-                # posis.append(np.array([posx, posy]))
-                # imgfilename = osp.join(data_prefix, filename, '{}_{}.jpeg'.format(posx.item(), posy.item()))
-                imgfilename = osp.join(data_prefix, filename, '_{}.jpeg'.format(idx))
+                posx, posy = patch_mask_nonzero_inds[idx]
+                posis.append(np.array([posx, posy]))
+                imgfilename = osp.join(data_prefix, filename, '{}_{}.jpeg'.format(posx.item(), posy.item()))
+                # imgfilename = osp.join(data_prefix, filename, '_{}.jpeg'.format(idx))
                 img = cv2.imread(imgfilename)
                 imgs.append(img)
 
