@@ -118,7 +118,7 @@ class XCLIP(CLIP):
         return {'positional_embedding'}
 
     def encode_image(self, image, bs=None):
-        return self.visual(image)[0], None
+        return self.visual(image)
 
     # L10 add for prompt addition
     def encode_prompt_addition(self, prompt):
