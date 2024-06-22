@@ -76,6 +76,7 @@ PTH can be found [here](https://drive.google.com/file/d/1Z1MO-IYuosW2kAw04GHMUgu
 - 20240405 fix pth version upload fv_2.0.0
 - 20240406 add end to end training model fv_2.0.1
 - 20240427 add pth
+- 20240622 delete part redundant code
 
 ## TODO
 - optimize code
