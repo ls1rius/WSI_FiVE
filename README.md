@@ -84,6 +84,15 @@ PTH can be found [here](https://drive.google.com/file/d/1Z1MO-IYuosW2kAw04GHMUgu
 
 ## Bibtex
 If this project is useful for you, please consider citing our paper.
+```
+@inproceedings{li2024generalizable,
+  title={Generalizable Whole Slide Image Classification with Fine-Grained Visual-Semantic Interaction},
+  author={Li, Hao and Chen, Ying and Chen, Yifei and Yu, Rongshan and Yang, Wenxian and Wang, Liansheng and Ding, Bowen and Han, Yuchen},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={11398--11407},
+  year={2024}
+}
+```
 
 ## Acknowledgements
 Parts of the codes are borrowed from [X-CLIP](https://github.com/microsoft/VideoX/tree/master/X-CLIP), [MedCLIP](https://github.com/RyanWangZf/MedCLIP). 
