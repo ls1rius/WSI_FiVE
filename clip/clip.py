@@ -13,7 +13,7 @@ from tqdm import tqdm
 from .simple_tokenizer import SimpleTokenizer as _Tokenizer
 import sys
 sys.path.append("../")
-from models.xclip import build_model
+from models.FiVE import build_model
 import math
 
 __all__ = ["available_models", "load", "tokenize", "_download", "_MODELS"]

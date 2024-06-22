@@ -17,9 +17,8 @@ import numpy as np
 import random
 from apex import amp
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
-from datasets.blending import CutmixMixupBlending
 from utils.config import get_config
-from models import xclip
+from models import FiVE
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from models.lora_wrap import LoraWrap
@@ -40,25 +39,23 @@ def parse_option():
     parser.add_argument('--only_test', action='store_true')
     parser.add_argument('--batch-size', type=int)
     parser.add_argument('--accumulation-steps', type=int)
-
     parser.add_argument("--local_rank", type=int, default=-1, help='local rank for DistributedDataParallel')
     args = parser.parse_args()
 
     config = get_config(args)
-    ### add by L10
-    config.defrost()
-    config.DATA.NUM_CLASSES = len(pd.read_csv(config.DATA.LABEL_LIST))
-    config.DATA.NUM_CLASSES_TRAIN = len(pd.read_csv(config.DATA.LABEL_LIST_TRAIN))
-    config.DATA.NUM_CLASSES_VAL = len(pd.read_csv(config.DATA.LABEL_LIST_VAL))
-    config.freeze()
-    ###
+    # ### add by L10
+    # config.defrost()
+    # config.DATA.NUM_CLASSES = len(pd.read_csv(config.DATA.LABEL_LIST))
+    # config.DATA.NUM_CLASSES_TRAIN = len(pd.read_csv(config.DATA.LABEL_LIST_TRAIN))
+    # config.DATA.NUM_CLASSES_VAL = len(pd.read_csv(config.DATA.LABEL_LIST_VAL))
+    # config.freeze()
+    # ###
     return args, config
 
 def main(config):
     train_data, val_data, train_loader, val_loader = build_dataloader(logger, config)
     os.environ["TOKENIZERS_PARALLELISM"] = "True"
-    # tokenizer = AutoTokenizer.from_pretrained("./llama_hf/")
-    model, _ = xclip.load(config.MODEL.PRETRAINED, config.MODEL.ARCH,
+    model, _ = FiVE.load(config.MODEL.PRETRAINED, config.MODEL.ARCH,
                             device="cpu", jit=False,
                             T=config.DATA.NUM_FRAMES,
                             droppath=config.MODEL.DROP_PATH_RATE,
@@ -73,18 +70,7 @@ def main(config):
                             is_img_pth=config.IS_IMG_PTH, # L10 add
                           )
     model = model.cuda()
-    mixup_fn = None
-    if config.AUG.MIXUP > 0:
-        criterion = SoftTargetCrossEntropy()
-        mixup_fn = CutmixMixupBlending(num_classes=config.DATA.NUM_CLASSES_TRAIN,
-                                       smoothing=config.AUG.LABEL_SMOOTH, 
-                                       mixup_alpha=config.AUG.MIXUP, 
-                                       cutmix_alpha=config.AUG.CUTMIX, 
-                                       switch_prob=config.AUG.MIXUP_SWITCH_PROB)
-    elif config.AUG.LABEL_SMOOTH > 0:
-        criterion = LabelSmoothingCrossEntropy(smoothing=config.AUG.LABEL_SMOOTH)
-    else:
-        criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss()
     
     optimizer = build_optimizer(config, model)
     lr_scheduler = build_scheduler(config, optimizer, len(train_loader))
@@ -131,7 +117,7 @@ def main(config):
         model.module.cache_prompt_features = None # add by L10
         train_one_epoch(epoch, model, criterion, optimizer, lr_scheduler, train_loader, text_labels_train,
                         prompts_labels,
-                        config, mixup_fn)
+                        config)
         model.module.cache_text_features = None # add by L10
         model.module.cache_prompt_features = None # add by L10
         acc1 = validate(val_loader, text_labels_val, model,
@@ -152,7 +138,7 @@ def main(config):
 
 def train_one_epoch(epoch, model, criterion, optimizer, lr_scheduler, train_loader, text_labels,
                     prompts_features,
-                    config, mixup_fn):
+                    config):
     model.train()
     optimizer.zero_grad()
     
@@ -193,9 +179,6 @@ def train_one_epoch(epoch, model, criterion, optimizer, lr_scheduler, train_load
             'criterion': criterion,
             'TOKEN_NUM': dict(config.TOKEN_NUM)
         }
-
-        if mixup_fn is not None:
-            images, label_id = mixup_fn(images, label_id)
 
         if texts.shape[0] == 1:
             texts = texts.view(1, -1)

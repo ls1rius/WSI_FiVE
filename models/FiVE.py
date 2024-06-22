@@ -31,7 +31,7 @@ def dist_collect(x):
     out_list = diff_dist.all_gather(out_list, x)
     return torch.cat(out_list, dim=0).contiguous()
 
-class XCLIP(CLIP):
+class FiVE(CLIP):
     def __init__(self,
                  embed_dim: int,
                  # vision
@@ -429,7 +429,7 @@ def build_model(state_dict: dict, T=8, droppath=0., use_checkpoint=False, logger
         transformer_width = -1
         transformer_heads = -1
         transformer_layers = -1
-    model = XCLIP(
+    model = FiVE(
         embed_dim,
         image_resolution, vision_layers, vision_width, vision_patch_size,
         context_length, vocab_size, transformer_width, transformer_heads, transformer_layers,  
