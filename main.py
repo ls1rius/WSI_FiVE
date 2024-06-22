@@ -41,15 +41,14 @@ def parse_option():
     parser.add_argument('--accumulation-steps', type=int)
     parser.add_argument("--local_rank", type=int, default=-1, help='local rank for DistributedDataParallel')
     args = parser.parse_args()
-
     config = get_config(args)
-    # ### add by L10
-    # config.defrost()
-    # config.DATA.NUM_CLASSES = len(pd.read_csv(config.DATA.LABEL_LIST))
-    # config.DATA.NUM_CLASSES_TRAIN = len(pd.read_csv(config.DATA.LABEL_LIST_TRAIN))
-    # config.DATA.NUM_CLASSES_VAL = len(pd.read_csv(config.DATA.LABEL_LIST_VAL))
-    # config.freeze()
-    # ###
+    ### add by L10
+    config.defrost()
+    config.DATA.NUM_CLASSES_TRAIN = len(pd.read_csv(config.DATA.LABEL_LIST_TRAIN))
+    config.DATA.NUM_CLASSES_VAL = len(pd.read_csv(config.DATA.LABEL_LIST_VAL))
+    config.DATA.NUM_CLASSES = config.DATA.NUM_CLASSES_TRAIN + config.DATA.NUM_CLASSES_VAL
+    config.freeze()
+    ###
     return args, config
 
 def main(config):
