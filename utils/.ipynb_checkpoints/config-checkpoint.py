@@ -14,29 +14,29 @@ _C.DATA = CN()
 _C.DATA.ROOT = ''
 _C.DATA.TRAIN_FILE = ''
 _C.DATA.VAL_FILE = ''
-_C.DATA.DATASET = ''
+_C.DATA.DATASET = 'kinetics400'
 _C.DATA.INPUT_SIZE = 224
 _C.DATA.NUM_FRAMES = 8
 _C.DATA.NUM_FRAMES_PERCENT = 0.25
 _C.DATA.NUM_CLASSES = 400
 _C.DATA.NUM_CLASSES_TRAIN = 400
 _C.DATA.NUM_CLASSES_VAL = 400
-_C.DATA.LABEL_LIST = ''
-_C.DATA.LABEL_LIST_TRAIN = ''
-_C.DATA.LABEL_LIST_VAL = ''
+_C.DATA.LABEL_LIST = 'labels/kinetics_400_labels.csv'
+_C.DATA.LABEL_LIST_TRAIN = 'labels/kinetics_400_labels.csv'
+_C.DATA.LABEL_LIST_VAL = 'labels/kinetics_400_labels.csv'
 
 # -----------------------------------------------------------------------------
 # Model settings
 # -----------------------------------------------------------------------------
 _C.MODEL = CN()
-_C.MODEL.ARCH = 'ViT-B/16'
+_C.MODEL.ARCH = 'ViT-B/32'
 _C.MODEL.DROP_PATH_RATE = 0.
 _C.MODEL.PRETRAINED = None
 _C.MODEL.RESUME = None
-_C.MODEL.FIX_TEXT = False
+_C.MODEL.FIX_TEXT = True
 _C.MODEL.FIX_IMAGE = False
 _C.MODEL.CONTEXT_LENGTH = 77
-_C.MODEL.GRAD_BATCH = 128
+_C.MODEL.ATTN_BATCH = 128
 _C.MODEL.VIT_VISION_LAYERS = -1
 _C.MODEL.VIT_TEXT_LAYERS = -1
 
@@ -63,6 +63,9 @@ _C.AUG = CN()
 _C.AUG.LABEL_SMOOTH = 0.1
 _C.AUG.COLOR_JITTER = 0.8
 _C.AUG.GRAY_SCALE = 0.2
+_C.AUG.MIXUP = 0.8
+_C.AUG.CUTMIX = 1.0
+_C.AUG.MIXUP_SWITCH_PROB = 0.5
 
 # -----------------------------------------------------------------------------
 # Testing settings
@@ -80,16 +83,15 @@ _C.SAVE_FREQ = 1
 _C.PRINT_FREQ = 50
 _C.SEED = 1024
 
+
 # -----------------------------------------------------------------------------
 # TOKEN NUM INFO # add by L10
 # -----------------------------------------------------------------------------
-_C.TOKEN_NUM = CN()
-_C.TOKEN_NUM.STA = 101  # start
+_C.TOKEN_NUM.SAT = 101 # start
 _C.TOKEN_NUM.END = 102  # end
-_C.TOKEN_NUM.SEP = 132  # sep
-_C.TOKEN_NUM.UNK = 3655  # unknown
-_C.PROMPT_LIST = []
-_C.IS_IMG_PTH = True
+_C.TOKEN_NUM.SEP = 132 # sep
+_C.TOKEN_NUM.UNK = 3655 # unknown
+
 
 def _update_config_from_file(config, cfg_file):
     config.defrost()

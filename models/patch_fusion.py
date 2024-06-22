@@ -50,7 +50,7 @@ class ResidualAttentionBlock(nn.Module):
             x = self.mlp(self.ln_2(x))
         return [x, prompt, sample_range]
 
-class MultiframeIntegrationTransformer(nn.Module):
+class MultiPatchIntegrationTransformer(nn.Module):
     def __init__(self, T, embed_dim=512, layers=1,):
         super().__init__()
         self.T = T
@@ -101,8 +101,8 @@ class MultiframeIntegrationTransformer(nn.Module):
 class PatchFusionTransformer(nn.Module):
     def __init__(self, T, embed_dim=512, layers_sa=1, layers_ca=1):
         super().__init__()
-        self.self_attn = MultiframeIntegrationTransformer(T, embed_dim, layers_sa)
-        self.cross_attn = MultiframeIntegrationTransformer(T, embed_dim, layers_ca)
+        self.self_attn = MultiPatchIntegrationTransformer(T, embed_dim, layers_sa)
+        self.cross_attn = MultiPatchIntegrationTransformer(T, embed_dim, layers_ca)
         self.bn1 = nn.LayerNorm(embed_dim)
         self.bn2 = nn.LayerNorm(embed_dim)
         # self.project_for_cls = nn.Sequential(OrderedDict([
@@ -167,4 +167,3 @@ def get_pos_embed(patch_info, d_model):
 #             posy_enc[..., i] = torch.cos(posy_rlt / (10000 ** ((2 * i - 1) / d_model)))
 # 
 #     return posx_rlt, posy_rlt, posx_enc, posy_enc
-

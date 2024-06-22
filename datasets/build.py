@@ -173,7 +173,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
 
         return self.prepare_train_frames(idx)
 
-class VideoDataset(BaseDataset):
+class WSIDataset(BaseDataset):
     def __init__(self, ann_file, pipeline, labels_file, start_index=0, **kwargs):
         super().__init__(ann_file, pipeline, start_index=start_index, **kwargs)
         self.labels_file = labels_file
@@ -200,27 +200,6 @@ class VideoDataset(BaseDataset):
                                     patch_pub_cnt=df[df['patient_id_sub']==patient_id_sub_list[i]].iloc[0]['patch_pub_cnt'],
                                     ))
         return video_infos
-
-    # def load_annotations(self):
-    #     """Load annotation file to get video information."""
-    #     if self.ann_file.endswith('.json'):
-    #         return self.load_json_annotations()
-    # 
-    #     video_infos = []
-    #     with open(self.ann_file, 'r') as fin:
-    #         for line in fin:
-    #             line_split = line.strip().split()
-    #             if self.multi_class:
-    #                 assert self.num_classes is not None
-    #                 filename, label = line_split[0], line_split[1:]
-    #                 label = list(map(int, label))
-    #             else:
-    #                 filename, label = line_split
-    #                 label = int(label)
-    #             if self.data_prefix is not None:
-    #                 filename = osp.join(self.data_prefix, filename)
-    #             video_infos.append(dict(filename=filename, label=label, tar=self.use_tar_format))
-    #     return video_infos
 
 
 class SubsetRandomSampler(torch.utils.data.Sampler):
@@ -265,21 +244,8 @@ def build_dataloader(logger, config):
     train_pipeline = [
         dict(type='SampleWSIData', clip_len=1, frame_interval=1, num_clips=config.DATA.NUM_FRAMES,
              num_clips_percent=config.DATA.NUM_FRAMES_PERCENT, is_img_pth=config.IS_IMG_PTH),
-        # dict(type='DecordInit'),
-        # dict(type='SampleFrames', clip_len=1, frame_interval=1, num_clips=config.DATA.NUM_FRAMES),
-        # dict(type='DecordDecode'),
-        # dict(type='Resize', scale=(-1, scale_resize)),
-        # dict(
-        #     type='MultiScaleCrop',
-        #     input_size=config.DATA.INPUT_SIZE,
-        #     scales=(1, 0.875, 0.75, 0.66),
-        #     random_crop=False,
-        #     max_wh_scale_gap=1),
-        # dict(type='NormWSIData'),
         dict(type='Resize', scale=(config.DATA.INPUT_SIZE, config.DATA.INPUT_SIZE), keep_ratio=False),
         dict(type='Flip', flip_ratio=0.5),
-        # dict(type='ColorJitter', p=config.AUG.COLOR_JITTER),
-        # dict(type='GrayScale', p=config.AUG.GRAY_SCALE),
         dict(type='Normalize', **img_norm_cfg),
         dict(type='FormatShape', input_format='NCHW'),
         dict(type='Collect', keys=['imgs', 'label', 'sample_range', 'posis', 'patch_maxr', 'patch_maxc', 'imgs_embed',
@@ -287,7 +253,7 @@ def build_dataloader(logger, config):
         dict(type='ToTensor', keys=['imgs', 'label', 'imgs_embed']),
     ]
         
-    train_data = VideoDataset(ann_file=config.DATA.TRAIN_FILE, data_prefix=config.DATA.ROOT,
+    train_data = WSIDataset(ann_file=config.DATA.TRAIN_FILE, data_prefix=config.DATA.ROOT,
                               labels_file=config.DATA.LABEL_LIST_TRAIN, pipeline=train_pipeline)
     num_tasks = dist.get_world_size()
     global_rank = dist.get_rank()
@@ -306,12 +272,6 @@ def build_dataloader(logger, config):
     val_pipeline = [
         dict(type='SampleWSIData', clip_len=1, frame_interval=1, num_clips=config.DATA.NUM_FRAMES, test_mode=True,
              num_clips_percent=config.DATA.NUM_FRAMES_PERCENT, is_img_pth=config.IS_IMG_PTH),
-        # dict(type='DecordInit'),
-        # dict(type='SampleFrames', clip_len=1, frame_interval=1, num_clips=config.DATA.NUM_FRAMES, test_mode=True),
-        # dict(type='DecordDecode'),
-        # dict(type='Resize', scale=(-1, scale_resize)),
-        # dict(type='CenterCrop', crop_size=config.DATA.INPUT_SIZE),
-        # dict(type='NormWSIData'),
         dict(type='Resize', scale=(config.DATA.INPUT_SIZE, config.DATA.INPUT_SIZE), keep_ratio=False),
         dict(type='Normalize', **img_norm_cfg),
         dict(type='FormatShape', input_format='NCHW'),
@@ -319,20 +279,8 @@ def build_dataloader(logger, config):
                                    'patch_pub_cnt', 'patch_inds'], meta_keys=[]),
         dict(type='ToTensor', keys=['imgs', 'imgs_embed'])
     ]
-    if config.TEST.NUM_CROP == 3:
-        val_pipeline[1] = dict(type='Resize', scale=(-1, config.DATA.INPUT_SIZE))
-        val_pipeline[2] = dict(type='ThreeCrop', crop_size=config.DATA.INPUT_SIZE)
-    if config.TEST.NUM_CLIP > 1:
-        val_pipeline[0] = dict(type='SampleWSIData', clip_len=1, frame_interval=1, num_clips=config.DATA.NUM_FRAMES,
-                               test_mode=True, multiview=config.TEST.NUM_CLIP)
 
-    # if config.TEST.NUM_CROP == 3:
-    #     val_pipeline[3] = dict(type='Resize', scale=(-1, config.DATA.INPUT_SIZE))
-    #     val_pipeline[4] = dict(type='ThreeCrop', crop_size=config.DATA.INPUT_SIZE)
-    # if config.TEST.NUM_CLIP > 1:
-    #     val_pipeline[1] = dict(type='SampleFrames', clip_len=1, frame_interval=1, num_clips=config.DATA.NUM_FRAMES, multiview=config.TEST.NUM_CLIP)
-
-    val_data = VideoDataset(ann_file=config.DATA.VAL_FILE, data_prefix=config.DATA.ROOT,
+    val_data = WSIDataset(ann_file=config.DATA.VAL_FILE, data_prefix=config.DATA.ROOT,
                             labels_file=config.DATA.LABEL_LIST_VAL, pipeline=val_pipeline)
     indices = np.arange(dist.get_rank(), len(val_data), dist.get_world_size())
     sampler_val = SubsetRandomSampler(indices)

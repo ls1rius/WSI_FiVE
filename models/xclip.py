@@ -2,25 +2,19 @@ from typing import Tuple, Union
 import torch
 from torch import nn
 import numpy as np
-from .mit import MultiframeIntegrationTransformer
-from .prompt import VideoSpecificPrompt
-from .cct import CrossFrameCommunicationTransformer
 import sys
 import warnings
 sys.path.append("../")
 from clip.model import CLIP,LayerNorm,Transformer,VisionTransformer
 import clip
 import math
-from .group_vit import GroupViT
 from .patch_fusion import PatchFusionTransformer
-from .llama import llama_text
 
 import diffdist.functional as diff_dist
 import torch.distributed as dist
 from collections import OrderedDict
 from .MedCLIPModel import MedCLIPVisionModelViT, MedCLIPTextModel
 import random
-from .gradient_reversal import GradientReversalModule
 from .lora_wrap import LoraWrap
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 from transformers.models.bert.modeling_bert import BertModel

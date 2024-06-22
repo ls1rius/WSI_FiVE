@@ -1,11 +1,11 @@
 DATA:
     ROOT: './data/TCGA-lung-patch_report'
-    TRAIN_FILE: './data/TCGA-lung-patch_report/LUAD_LUSC_data_train_reid.csv'
+    TRAIN_FILE: './data/TCGA-lung-patch_report/LUAD_LUSC_data_desc_reid_delval.csv'
     VAL_FILE: './data/TCGA-lung-patch_report/LUAD_LUSC_data_val_reid.csv'
-    LABEL_LIST_TRAIN: './data/TCGA-lung-patch_report/LUAD_LUSC_labels_train_reid.csv'
+    LABEL_LIST_TRAIN: './data/TCGA-lung-patch_report/LUAD_LUSC_labels_desc_reid.csv'
     LABEL_LIST_VAL: './data/TCGA-lung-patch_report/LUAD_LUSC_labels_val_reid.csv'
-    NUM_FRAMES_PERCENT: 0.25
-    NUM_FRAMES: 16384
+    NUM_FRAMES_PERCENT: 1.00
+    NUM_FRAMES: 3072
 MODEL:
     CONTEXT_LENGTH: 308 # max 103 # max 169
 TRAIN:
@@ -13,11 +13,13 @@ TRAIN:
     ACCUMULATION_STEPS: 8
     EPOCHS: 100
     LR: 3.e-6
+AUG:
+    MIXUP: 0.0
 PRINT_FREQ: 50
 
 #TEST:
 #    ONLY_TEST: True
-IS_IMG_PTH: True
+IS_IMG_PTH: False
 TOKEN_NUM:
     STA: 101 # start
     END: 102

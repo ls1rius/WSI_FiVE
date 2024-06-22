@@ -22,7 +22,6 @@ class MedCLIPTextModel(nn.Module):
         self.bert_type = bert_type
         self.last_n_layer = 4
         self.model = AutoModel.from_pretrained(self.bert_type, output_hidden_states=True)
-        # this tokenizer is actually not used
         self.tokenizer = AutoTokenizer.from_pretrained(self.bert_type)
         self.projection_head = nn.Linear(768, proj_dim, bias=proj_bias)
 
